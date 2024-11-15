@@ -1,6 +1,6 @@
 # Freya - The music player built with modern web technologies!
 
-Development very much in progress1
+Development very much in progress!
 
 ## Tauri + SvelteKit + TypeScript
 
