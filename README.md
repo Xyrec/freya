@@ -4,5 +4,6 @@ Built with Tauri 2.0, SvelteKit and TypeScript.
 
 ## Tauri
 
+- Rodio
 - Symphonia
 - Cpal
