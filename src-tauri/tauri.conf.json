@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "freya",
+  "productName": "Freya",
   "version": "0.1.0",
   "identifier": "com.freya.xyrec.xyz",
   "build": {
@@ -12,9 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "freya",
-        "width": 800,
-        "height": 600
+        "title": "Freya",
+        "width": 480,
+        "height": 800
       }
     ],
     "security": {
