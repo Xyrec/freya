@@ -1,15 +1,14 @@
 {
   "name": "freya",
   "version": "0.1.0",
-  "description": "",
+  "description": "A music player built with modern web technologies",
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "tauri"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "license": "MIT",
   "dependencies": {
@@ -18,9 +17,9 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.6",
-    "@sveltejs/kit": "^2.12.1",
-    "@sveltejs/vite-plugin-svelte": "^4.0.3",
-    "svelte": "^5.14.2",
+    "@sveltejs/kit": "^2.13.0",
+    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "svelte": "^5.15.0",
     "svelte-check": "^4.1.1",
     "tslib": "^2.8.1",
     "typescript": "^5.7.2",
