@@ -7,3 +7,8 @@ Built with Tauri 2.0, SvelteKit and TypeScript.
 - Rodio
 - Symphonia
 - Cpal
+
+## Svelte
+
+- TailwindCSS
+- shadcn/ui
