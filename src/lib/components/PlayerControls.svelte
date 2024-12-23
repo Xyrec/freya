@@ -13,7 +13,9 @@
           <div class="font-medium leading-none">Come Alive</div>
           <div class="text-sm text-muted-foreground">Netsky</div>
         </div>
-        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+        <div
+          class="flex items-center gap-2 text-sm text-muted-foreground font-mono"
+        >
           <span>2:14</span>
           <span>/</span>
           <span>3:11</span>
