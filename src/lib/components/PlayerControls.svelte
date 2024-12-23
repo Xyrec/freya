@@ -4,9 +4,7 @@
   import { Slider } from "./ui/slider";
 </script>
 
-<div
-  class="fixed bottom-0 left-0 right-0 w-full border-t bg-background p-4 z-10"
->
+<div class="w-full border-t bg-background p-4 z-10">
   <div class="flex items-center gap-4">
     <img src="#" alt="Album art" class="h-12 w-12 rounded-md" />
     <div class="flex-1">

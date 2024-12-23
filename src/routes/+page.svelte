@@ -20,9 +20,9 @@
   }
 </script>
 
-<div class="flex flex-col bg-background text-foreground overscroll-none">
+<div class="flex flex-col h-screen bg-background text-foreground">
   <MusicHeader />
-  <Tabs bind:value={$activeTab} class="flex-1">
+  <Tabs bind:value={$activeTab} class="flex-1 flex flex-col overflow-hidden">
     <TabsList
       class="w-full justify-start rounded-none border-b bg-background p-0"
     >
@@ -45,8 +45,8 @@
         Bio
       </TabsTrigger>
     </TabsList>
-    <TabsContent value="playlist" class="flex-1 p-0">
-      <ScrollArea class="flex-1">
+    <TabsContent value="playlist" class="flex-1 p-0 overflow-hidden">
+      <ScrollArea class="h-full">
         <PlaylistView />
       </ScrollArea>
     </TabsContent>
