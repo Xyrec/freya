@@ -9,22 +9,15 @@
     TabsList,
     TabsTrigger,
   } from "$lib/components/ui/tabs";
-  import { invoke } from "@tauri-apps/api/core";
-  import { writable } from "svelte/store";
 
-  const activeTab = writable("playlist");
-
-  async function playSound() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    await invoke("play_sound");
-  }
+  let activeTab = $state("playlist");
 </script>
 
 <div class="flex flex-col h-screen bg-background text-foreground">
   <MusicHeader />
-  <Tabs bind:value={$activeTab} class="flex-1 flex flex-col overflow-hidden">
+  <Tabs bind:value={activeTab} class="flex-1 flex flex-col overflow-hidden">
     <TabsList
-      class="w-full justify-start rounded-none border-b bg-background p-0"
+      class="w-full justify-start rounded-none border-b bg-background p-0 z-50 shadow"
     >
       <TabsTrigger
         value="playlist"

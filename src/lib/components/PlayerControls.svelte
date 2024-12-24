@@ -1,12 +1,32 @@
-<script>
-  import { Play, SkipBack, SkipForward, Volume2 } from "lucide-svelte";
+<script lang="ts">
+  import { Pause, Play, SkipBack, SkipForward, Volume2 } from "lucide-svelte";
   import { Button } from "./ui/button";
   import { Slider } from "./ui/slider";
+  import { invoke } from "@tauri-apps/api/core";
+
+  let userVolume = $state<[number]>([70]);
+  let trackProgress = $state<[number]>([0]);
+  let trackLength = $state<number>(191);
+  let isPlaying = $state<boolean>(false);
+
+  async function togglePlayback() {
+    if (isPlaying) {
+      await invoke("pause_sound");
+      isPlaying = false;
+    } else {
+      await invoke("play_sound");
+      isPlaying = true;
+    }
+  }
 </script>
 
 <div class="w-full border-t bg-background p-4 z-10">
   <div class="flex items-center gap-4">
-    <img src="#" alt="Album art" class="h-12 w-12 rounded-md" />
+    <img
+      src="album-art.jpg"
+      alt="Album art"
+      class="aspect-square w-24 rounded-md"
+    />
     <div class="flex-1">
       <div class="mb-2 flex items-center justify-between">
         <div>
@@ -21,14 +41,23 @@
           <span>3:11</span>
         </div>
       </div>
-      <Slider max={100} step={1} class="my-2" />
+      <Slider
+        value={trackProgress}
+        max={trackLength}
+        step={1}
+        class="mb-3 mt-2 w-[calc(100%)]"
+      />
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
           <Button variant="ghost" size="icon">
             <SkipBack class="h-4 w-4" />
           </Button>
-          <Button size="icon">
-            <Play class="h-4 w-4" />
+          <Button size="icon" on:click={togglePlayback}>
+            {#if isPlaying}
+              <Pause class="h-4 w-4" />
+            {:else}
+              <Play class="h-4 w-4" />
+            {/if}
           </Button>
           <Button variant="ghost" size="icon">
             <SkipForward class="h-4 w-4" />
@@ -36,7 +65,12 @@
         </div>
         <div class="flex items-center gap-2">
           <Volume2 class="h-4 w-4" />
-          <Slider max={100} step={1} class="w-[100px]" />
+          <Slider
+            value={userVolume}
+            max={100}
+            step={1}
+            class="w-[100px] mx-1"
+          />
         </div>
       </div>
     </div>

@@ -1,35 +1,48 @@
-use rodio::{source::Source, Decoder, OutputStream};
+use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
-use std::io::BufReader;
-use std::thread;
+use std::sync::{Arc, Mutex};
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn play_sound() {
-    thread::spawn(|| {
-        // Get an output stream handle to the default physical sound device.
-        // Note that no sound will be played if _stream is dropped
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        // Load a sound from a file, using a path relative to Cargo.toml
-        let file = BufReader::new(File::open("../static/example.flac").unwrap());
-        // Decode that sound file into a source
-        let source = Decoder::new(file).unwrap();
-        // Get the length of the source
-        let duration = source.total_duration().unwrap();
-        // Play the sound directly on the device
-        let _result = stream_handle.play_raw(source.convert_samples());
-
-        // The sound plays in a separate audio thread,
-        // so we need to keep the main thread alive while it's playing.
-        std::thread::sleep(std::time::Duration::from_nanos(duration.as_nanos() as u64));
-    });
+struct AppState {
+    sink: Arc<Mutex<Sink>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let sink = Sink::try_new(&stream_handle).unwrap();
+    let app_state = AppState {
+        sink: Arc::new(Mutex::new(sink)),
+    };
+
     tauri::Builder::default()
+        .manage(app_state)
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![play_sound])
+        .invoke_handler(tauri::generate_handler![play_sound, pause_sound])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+#[tauri::command]
+fn play_sound(state: tauri::State<AppState>) {
+    let sink = state.sink.lock().unwrap();
+    if sink.is_paused() {
+        sink.play();
+    } else if sink.empty() {
+        // Example: append a source if needed, e.g.:
+        // sink.append(rodio::source::SineWave::new(440));
+
+        let file = File::open("../static/example.flac").unwrap();
+        let source = Decoder::new(file).unwrap();
+        sink.append(source);
+        sink.play();
+    }
+}
+
+#[tauri::command]
+fn pause_sound(state: tauri::State<AppState>) {
+    let sink = state.sink.lock().unwrap();
+    if !sink.is_paused() {
+        sink.pause();
+    }
 }

@@ -59,19 +59,19 @@
   ];
 </script>
 
-<div class="px-3 space-y-1 mb-2">
+<div class="px-3 space-y-1 my-2">
   {#each playlist as track (track.id)}
     <div
-      class={`flex items-center justify-between rounded-lg px-4 py-2 hover:bg-accent ${
+      class={`grid grid-cols-[40px_1fr_auto] items-center rounded-lg px-4 py-2 hover:bg-accent ${
         track.current ? "bg-accent border border-primary" : ""
       }`}
     >
-      <div class="flex items-center gap-4">
-        <span class="text-sm text-muted-foreground font-mono">{track.id}</span>
-        <div>
-          <div class="font-medium leading-none">{track.title}</div>
-          <div class="text-sm text-muted-foreground">{track.artist}</div>
-        </div>
+      <span class="text-sm text-muted-foreground font-mono w-[40px]"
+        >{track.id}</span
+      >
+      <div>
+        <div class="font-medium leading-none">{track.title}</div>
+        <div class="text-sm text-muted-foreground">{track.artist}</div>
       </div>
       <span class="text-sm text-muted-foreground font-mono"
         >{track.duration}</span
