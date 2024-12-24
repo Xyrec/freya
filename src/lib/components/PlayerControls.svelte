@@ -3,6 +3,8 @@
   import { Button } from "./ui/button";
   import { Slider } from "./ui/slider";
   import { invoke } from "@tauri-apps/api/core";
+  import { onMount } from "svelte";
+  import { listen } from "@tauri-apps/api/event";
 
   let userVolume = $state<[number]>([70]);
   let trackProgress = $state<[number]>([0]);
@@ -18,6 +20,15 @@
       isPlaying = true;
     }
   }
+
+  onMount(() => {
+    const unlistenPromise = listen("sound_done", () => {
+      isPlaying = false;
+    });
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  });
 </script>
 
 <div class="w-full border-t bg-background p-4 z-10">
