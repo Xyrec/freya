@@ -5,6 +5,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
   import { listen } from "@tauri-apps/api/event";
+  import { info } from "@tauri-apps/plugin-log";
 
   let userVolume = $state<[number]>([70]);
   let trackProgress = $state<[number]>([0]);
@@ -19,6 +20,11 @@
       await invoke("play_sound");
       isPlaying = true;
     }
+  }
+
+  async function handleVolumeChange(volume: number[]) {
+    userVolume = [volume[0]];
+    await invoke("set_volume", { volume: volume[0] });
   }
 
   onMount(() => {
@@ -80,7 +86,8 @@
             value={userVolume}
             max={100}
             step={1}
-            class="w-[100px] mx-1"
+            class="w-[100px]"
+            onValueChange={handleVolumeChange}
           />
         </div>
       </div>
