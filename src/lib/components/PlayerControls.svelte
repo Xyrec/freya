@@ -27,12 +27,34 @@
     await invoke("set_volume", { volume: volume[0] });
   }
 
+  async function handleProgressChange(progress: number[]) {
+    trackProgress = [progress[0]];
+    await invoke("seek_position", { position: progress[0] });
+  }
+
+  function formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
+
   onMount(() => {
-    const unlistenPromise = listen("sound_done", () => {
-      isPlaying = false;
+    const unlistenProgress = listen<{
+      current_position: number;
+      duration: number;
+    }>("progress_update", (event) => {
+      trackProgress = [event.payload.current_position];
+      trackLength = event.payload.duration;
     });
+
+    const unlistenDone = listen("sound_done", () => {
+      isPlaying = false;
+      trackProgress = [0];
+    });
+
     return () => {
-      unlistenPromise.then((unlisten) => unlisten());
+      unlistenProgress.then((unlisten) => unlisten());
+      unlistenDone.then((unlisten) => unlisten());
     };
   });
 </script>
@@ -53,15 +75,15 @@
         <div
           class="flex items-center gap-2 text-sm text-muted-foreground font-mono"
         >
-          <span>2:14</span>
+          <span>{formatTime(trackProgress[0])}</span>
           <span>/</span>
-          <span>3:11</span>
+          <span>{formatTime(trackLength)}</span>
         </div>
       </div>
       <Slider
         value={trackProgress}
         max={trackLength}
-        step={1}
+        step={0.1}
         class="mb-3 mt-2 w-[calc(100%)]"
       />
       <div class="flex items-center justify-between">
