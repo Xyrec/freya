@@ -10,6 +10,7 @@
   let userVolume = $state<[number]>([70]);
   let trackProgress = $state<[number]>([0]);
   let trackLength = $state<number>(191);
+  let lastPosition = $state<number>(0);
   let isPlaying = $state<boolean>(false);
 
   async function togglePlayback() {
@@ -17,6 +18,11 @@
       await invoke("pause_sound");
       isPlaying = false;
     } else {
+      if (lastPosition >= trackLength) {
+        // Reset position when starting playback from the end
+        trackProgress = [0];
+        lastPosition = 0;
+      }
       await invoke("play_sound");
       isPlaying = true;
     }
@@ -44,12 +50,14 @@
       duration: number;
     }>("progress_update", (event) => {
       trackProgress = [event.payload.current_position];
+      lastPosition = event.payload.current_position;
       trackLength = event.payload.duration;
     });
 
     const unlistenDone = listen("sound_done", () => {
       isPlaying = false;
-      trackProgress = [0];
+      lastPosition = trackLength; // Keep the position at the end
+      trackProgress = [trackLength]; // Keep progress bar at the end
     });
 
     return () => {
@@ -83,8 +91,9 @@
       <Slider
         value={trackProgress}
         max={trackLength}
-        step={0.1}
+        step={0.01}
         class="mb-3 mt-2 w-[calc(100%)]"
+        onValueChange={handleProgressChange}
       />
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
