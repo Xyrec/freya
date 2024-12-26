@@ -5,7 +5,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
   import { listen } from "@tauri-apps/api/event";
-  import { info } from "@tauri-apps/plugin-log";
+  import { error, info } from "@tauri-apps/plugin-log";
 
   let userVolume = $state<[number]>([70]);
   let trackProgress = $state<[number]>([0]);
@@ -14,17 +14,22 @@
   let isPlaying = $state<boolean>(false);
 
   async function togglePlayback() {
-    if (isPlaying) {
-      await invoke("pause_sound");
-      isPlaying = false;
-    } else {
-      if (lastPosition >= trackLength) {
-        // Reset position when starting playback from the end
-        trackProgress = [0];
-        lastPosition = 0;
+    try {
+      if (isPlaying) {
+        await invoke("pause_sound");
+        isPlaying = false;
+      } else {
+        if (lastPosition >= trackLength) {
+          trackProgress = [0];
+          lastPosition = 0;
+        }
+        await invoke("play_sound");
+        isPlaying = true;
       }
-      await invoke("play_sound");
-      isPlaying = true;
+    } catch (err) {
+      error(String(err));
+      // Optionally reset state if operation failed
+      isPlaying = false;
     }
   }
 

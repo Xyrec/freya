@@ -85,12 +85,27 @@ fn play_sound(app: AppHandle, state: tauri::State<AppState>) {
 }
 
 #[tauri::command]
-fn pause_sound(state: tauri::State<AppState>) {
-    let sink = state.sink.lock().unwrap();
-    if !sink.is_paused() {
+async fn pause_sound(state: tauri::State<'_, AppState>) -> Result<(), String> {
+    // Log pause attempt
+    println!("Attempting to pause sound");
+
+    let sink = state
+        .sink
+        .lock()
+        .map_err(|_| "Failed to acquire sink lock")?;
+    let current_state = sink.is_paused();
+
+    if !current_state {
+        // Log current state
+        println!("Sink is playing, pausing now");
         sink.pause();
         state.is_paused.store(true, Ordering::SeqCst);
+        println!("Pause completed");
+    } else {
+        println!("Sink is already paused");
     }
+
+    Ok(())
 }
 
 #[tauri::command]
