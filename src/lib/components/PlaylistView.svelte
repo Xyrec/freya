@@ -1,5 +1,15 @@
 <script lang="ts">
-  export const playlist = [
+  interface Track {
+    id: number;
+    title: string;
+    artist: string;
+    duration: string;
+    current?: boolean;
+  }
+
+  let playlist: Track[] = [];
+
+  playlist = [
     { id: 1, title: "Love Has Gone", artist: "Netsky", duration: "4:11" },
     {
       id: 2,
@@ -54,17 +64,33 @@
       id: 15,
       title: "Around the World",
       artist: "Daft Punk",
-      duration: "7:10",
+      duration: "7:09",
     },
   ];
+
+  function setCurrentTrack(id: number) {
+    playlist = playlist.map((track) => ({
+      ...track,
+      current: track.id === id,
+    }));
+  }
 </script>
 
-<div class="px-3 space-y-1 my-2">
+<div class="px-3 space-y-1 my-2 overscroll-auto">
   {#each playlist as track (track.id)}
     <div
-      class={`grid grid-cols-[40px_1fr_auto] items-center rounded-lg px-4 py-2 hover:bg-accent ${
-        track.current ? "bg-accent border border-primary" : ""
+      class={`grid grid-cols-[40px_1fr_auto] items-center rounded-lg px-4 py-2 hover:bg-accent cursor-pointer ${
+        track.current ? "bg-accent shadow-inner shadow-border" : ""
       }`}
+      role="button"
+      tabindex="0"
+      on:click={() => setCurrentTrack(track.id)}
+      on:keydown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setCurrentTrack(track.id);
+        }
+      }}
     >
       <span class="text-sm text-muted-foreground font-mono w-[40px]"
         >{track.id}</span
