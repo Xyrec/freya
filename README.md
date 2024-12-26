@@ -5,8 +5,6 @@ Built with Tauri 2.0, SvelteKit, TypeScript and Rust.
 ## Rust
 
 - Rodio
-- Symphonia
-- Cpal
 
 ## Svelte
 

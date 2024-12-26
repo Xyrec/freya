@@ -17,7 +17,7 @@
     try {
       if (isPlaying) {
         await invoke("pause_sound");
-        isPlaying = false;
+        isPlaying = false; // Only set false after successful pause
       } else {
         if (lastPosition >= trackLength) {
           trackProgress = [0];
@@ -28,8 +28,7 @@
       }
     } catch (err) {
       error(String(err));
-      // Optionally reset state if operation failed
-      isPlaying = false;
+      // State remains unchanged if operation failed
     }
   }
 

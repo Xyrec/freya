@@ -40,11 +40,12 @@ pub fn run() {
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
-fn play_sound(app: AppHandle, state: tauri::State<AppState>) {
+async fn play_sound(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<(), String> {
     let sink = state.sink.lock().unwrap();
     if state.is_paused.load(Ordering::SeqCst) {
         sink.play();
         state.is_paused.store(false, Ordering::SeqCst);
+        Ok(())
     } else if sink.empty() {
         let file = File::open("../static/example.flac").unwrap();
         let source = Decoder::new(file).unwrap();
@@ -81,6 +82,10 @@ fn play_sound(app: AppHandle, state: tauri::State<AppState>) {
             arc_paused.store(false, Ordering::SeqCst);
             app_clone.emit("sound_done", ()).unwrap();
         });
+
+        Ok(())
+    } else {
+        Err("Sink is not empty".to_string())
     }
 }
 
