@@ -9,7 +9,7 @@
 
   let userVolume = $state<[number]>([50]);
   let trackProgress = $state<[number]>([0]);
-  let trackLength = $state<number>(191);
+  let trackLength = $state<number>(0);
   let lastPosition = $state<number>(0);
   let isPlaying = $state<boolean>(false);
 
