@@ -7,7 +7,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { error, info } from "@tauri-apps/plugin-log";
 
-  let userVolume = $state<[number]>([70]);
+  let userVolume = $state<[number]>([50]);
   let trackProgress = $state<[number]>([0]);
   let trackLength = $state<number>(191);
   let lastPosition = $state<number>(0);
@@ -38,7 +38,7 @@
   }
 
   async function handleProgressChange(progress: number[]) {
-    trackProgress = [progress[0]];
+    info("Seeking to " + progress[0]);
     await invoke("seek_position", { position: progress[0] });
   }
 

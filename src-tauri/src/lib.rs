@@ -136,5 +136,5 @@ fn seek_position(state: tauri::State<AppState>, position: f32) {
 fn set_volume(state: tauri::State<AppState>, volume: f32) {
     let sink = state.sink.lock().unwrap();
     // Convert 0-100 range to 0.0-1.0
-    sink.set_volume(volume / 100.0);
+    sink.set_volume((volume / 100.0).powf(2.0));
 }
