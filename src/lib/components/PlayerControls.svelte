@@ -7,7 +7,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { error, info } from "@tauri-apps/plugin-log";
 
-  let userVolume = $state<[number]>([50]);
+  let userVolume = $state<[number]>([15]);
   let trackProgress = $state<[number]>([0]);
   let trackLength = $state<number>(0);
   let lastPosition = $state<number>(0);
@@ -49,6 +49,8 @@
   }
 
   onMount(() => {
+    handleVolumeChange(userVolume);
+
     const unlistenProgress = listen<{
       current_position: number;
       duration: number;
@@ -97,8 +99,8 @@
         max={trackLength}
         step={0.01}
         class="mb-3 mt-2 w-[calc(100%)]"
-        onValueChange={handleProgressChange}
       />
+      <!-- onValueChange={handleProgressChange} -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
           <Button variant="ghost" size="icon">
