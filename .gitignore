@@ -9,4 +9,4 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 # Insert a file in this directory manually, added to gitignore for copyright reasons
-static/example.flac
+static/example.*

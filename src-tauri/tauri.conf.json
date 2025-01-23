@@ -15,7 +15,8 @@
         "title": "Freya",
         "width": 480,
         "height": 800,
-        "resizable": false
+        "resizable": false,
+        "maximizable": false
       }
     ],
     "security": {
