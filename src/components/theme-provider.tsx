@@ -1,11 +1,18 @@
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
-import { Button } from "./ui/button";
-import { Moon, Sun } from "lucide-react";
+"use client";
 
-export function ThemeProvider({
-  children,
-  ...props
-}: React.ComponentProps<typeof NextThemesProvider>) {
+import { Moon, Sun } from "lucide-react";
+import { ThemeProviderProps, useTheme } from "next-themes";
+import dynamic from "next/dynamic";
+import { Button } from "./ui/button";
+
+const NextThemesProvider = dynamic(
+  () => import("next-themes").then((e) => e.ThemeProvider),
+  {
+    ssr: false,
+  }
+);
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
