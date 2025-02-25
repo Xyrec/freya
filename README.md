@@ -6,7 +6,7 @@ Built with Tauri 2.0, React, TypeScript and Rust.
 
 - Symphonia
 
-## Svelte
+## React
 
 - TailwindCSS
 - shadcn/ui
