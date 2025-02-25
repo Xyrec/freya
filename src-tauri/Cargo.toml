@@ -20,4 +20,25 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.2.4", features = [] }
-tauri-plugin-log = "2.0.0-rc"
+tauri-plugin-log = "2"
+tauri-plugin-shell = "2"
+rodio = { version = "0.20.1", default-features = false, features = ["symphonia-all"] }
+symphonia = "0.5.4"
+
+[features]
+symphonia-aac = ["symphonia/aac"]
+symphonia-all = [
+    "symphonia-aac",
+    "symphonia-flac",
+    "symphonia-isomp4",
+    "symphonia-mp3",
+    "symphonia-vorbis",
+    "symphonia-wav",
+]
+symphonia-flac = ["symphonia/flac"]
+symphonia-isomp4 = ["symphonia/isomp4"]
+symphonia-mp3 = ["symphonia/mp3"]
+symphonia-vorbis = ["symphonia/vorbis"]
+symphonia-wav = ["symphonia/wav", "symphonia/pcm", "symphonia/adpcm"]
+symphonia-alac = ["symphonia/isomp4", "symphonia/alac"]
+symphonia-aiff = ["symphonia/aiff", "symphonia/pcm"]
