@@ -25,7 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} h-screen overflow-hidden select-none cursor-default`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
