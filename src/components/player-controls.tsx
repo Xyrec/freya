@@ -15,6 +15,7 @@ export function PlayerControls() {
           className="aspect-square w-24 rounded-md"
           width={96}
           height={96}
+          placeholder="empty"
         />
         <div className="flex-1">
           <div className="mb-2 flex items-center justify-between">
