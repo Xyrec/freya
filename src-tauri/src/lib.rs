@@ -7,7 +7,8 @@ use tauri::{AppHandle, Emitter};
 struct AppState {
     sink: Arc<Mutex<Sink>>,
     is_paused: Arc<AtomicBool>,
-    is_seeking: Arc<AtomicBool>, // New flag to track seeking state
+    is_seeking: Arc<AtomicBool>, // Flag to track seeking state
+    current_duration: Arc<Mutex<std::time::Duration>>, // Store current track duration
 }
 
 #[derive(serde::Serialize, Clone)]
@@ -23,7 +24,8 @@ pub fn run() {
     let app_state = AppState {
         sink: Arc::new(Mutex::new(sink)),
         is_paused: Arc::new(AtomicBool::new(false)),
-        is_seeking: Arc::new(AtomicBool::new(false)), // Initialize seeking flag
+        is_seeking: Arc::new(AtomicBool::new(false)),
+        current_duration: Arc::new(Mutex::new(std::time::Duration::default())),
     };
 
     tauri::Builder::default()
@@ -43,15 +45,36 @@ pub fn run() {
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 async fn play_sound(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<(), String> {
-    let sink = state.sink.lock().unwrap();
+    println!("Attempting to play sound");
+
+    let sink = state
+        .sink
+        .lock()
+        .map_err(|_| "Failed to acquire sink lock".to_string())?;
+
     if state.is_paused.load(Ordering::SeqCst) {
+        println!("Resuming paused playback");
         sink.play();
         state.is_paused.store(false, Ordering::SeqCst);
+        println!("Playback resumed");
         Ok(())
     } else if sink.empty() {
-        let file = File::open("../music/example.flac").unwrap();
-        let source = Decoder::new(file).unwrap();
+        println!("Starting new playback");
+
+        let file = File::open("../music/example.flac")
+            .map_err(|e| format!("Failed to open audio file: {}", e))?;
+
+        let source =
+            Decoder::new(file).map_err(|e| format!("Failed to decode audio file: {}", e))?;
+
         let duration = source.total_duration().unwrap_or_default();
+
+        // Store the duration for later use
+        *state
+            .current_duration
+            .lock()
+            .map_err(|_| "Failed to update duration".to_string())? = duration;
+
         sink.append(source);
 
         // Reset position before starting playback
@@ -61,20 +84,26 @@ async fn play_sound(app: AppHandle, state: tauri::State<'_, AppState>) -> Result
 
         let arc_sink = Arc::clone(&state.sink);
         let arc_paused = Arc::clone(&state.is_paused);
-        let arc_seeking = Arc::clone(&state.is_seeking); // Add seeking flag
+        let arc_seeking = Arc::clone(&state.is_seeking);
         let app_clone = app.clone();
+        let arc_duration = Arc::clone(&state.current_duration);
 
         std::thread::spawn(move || {
             // Small initial delay to ensure proper position tracking
             std::thread::sleep(std::time::Duration::from_millis(50));
+
+            println!("Started progress monitoring thread");
 
             while !arc_sink.lock().unwrap().empty() {
                 // Only send progress updates if not seeking
                 if !arc_paused.load(Ordering::SeqCst) && !arc_seeking.load(Ordering::SeqCst) {
                     let sink = arc_sink.lock().unwrap();
                     let position = sink.get_pos();
+                    let duration = *arc_duration.lock().unwrap();
+
                     // Ensure position never exceeds duration
                     let current_pos = position.as_secs_f32().min(duration.as_secs_f32());
+
                     let progress = ProgressData {
                         current_position: current_pos,
                         duration: duration.as_secs_f32(),
@@ -83,29 +112,32 @@ async fn play_sound(app: AppHandle, state: tauri::State<'_, AppState>) -> Result
                 }
                 std::thread::sleep(std::time::Duration::from_millis(100));
             }
+
             arc_paused.store(false, Ordering::SeqCst);
+            println!("Playback finished, emitting sound_done event");
             app_clone.emit("sound_done", ()).unwrap();
         });
 
+        println!("Playback started successfully");
         Ok(())
     } else {
+        println!("Cannot play: Sink is not empty");
         Err("Sink is not empty".to_string())
     }
 }
 
 #[tauri::command]
 async fn pause_sound(state: tauri::State<'_, AppState>) -> Result<(), String> {
-    // Log pause attempt
     println!("Attempting to pause sound");
 
     let sink = state
         .sink
         .lock()
-        .map_err(|_| "Failed to acquire sink lock")?;
+        .map_err(|_| "Failed to acquire sink lock".to_string())?;
+
     let current_state = sink.is_paused();
 
     if !current_state {
-        // Log current state
         println!("Sink is playing, pausing now");
         sink.pause();
         state.is_paused.store(true, Ordering::SeqCst);
@@ -123,10 +155,16 @@ async fn seek_position(
     state: tauri::State<'_, AppState>,
     position: f32,
 ) -> Result<(), String> {
+    println!("Seeking to position: {}s", position);
+
     // Set seeking flag before seeking
     state.is_seeking.store(true, Ordering::SeqCst);
 
-    let sink = state.sink.lock().unwrap();
+    let sink = state
+        .sink
+        .lock()
+        .map_err(|_| "Failed to acquire sink lock".to_string())?;
+
     let was_paused = sink.is_paused();
 
     // Temporarily unpause to perform seek
@@ -134,11 +172,10 @@ async fn seek_position(
         sink.play();
     }
 
-    // Small delay to ensure the seek completes
-    let duration = std::time::Duration::from_secs_f32(position);
+    let seek_duration = std::time::Duration::from_secs_f32(position);
 
     // Perform the seek operation
-    match sink.try_seek(duration) {
+    match sink.try_seek(seek_duration) {
         Ok(_) => {
             // If seek was successful
             if was_paused {
@@ -152,37 +189,52 @@ async fn seek_position(
             std::thread::sleep(std::time::Duration::from_millis(50));
 
             // Send immediate position update to frontend
-            let actual_sink = state.sink.lock().unwrap();
+            let actual_sink = state
+                .sink
+                .lock()
+                .map_err(|_| "Failed to acquire sink lock after seek".to_string())?;
+
             let new_position = actual_sink.get_pos().as_secs_f32();
 
-            // Calculate duration if needed
-            let duration_secs = 0.0; // This should be replaced with actual duration logic
+            // Get current duration from our stored value
+            let duration = state
+                .current_duration
+                .lock()
+                .map_err(|_| "Failed to get duration".to_string())?;
 
             // Emit position_changed event with accurate position
             app.emit(
                 "position_changed",
                 ProgressData {
                     current_position: new_position,
-                    duration: duration_secs,
+                    duration: duration.as_secs_f32(),
                 },
             )
-            .unwrap();
+            .map_err(|e| format!("Failed to emit position_changed: {}", e))?;
 
             // Clear seeking flag after position update is sent
             state.is_seeking.store(false, Ordering::SeqCst);
+            println!("Seek completed successfully to position: {}s", new_position);
             Ok(())
         }
         Err(e) => {
             // Clear seeking flag on error
             state.is_seeking.store(false, Ordering::SeqCst);
+            println!("Seek failed: {:?}", e);
             Err(format!("Seek error: {:?}", e))
         }
     }
 }
 
 #[tauri::command]
-fn set_volume(state: tauri::State<AppState>, volume: f32) {
-    let sink = state.sink.lock().unwrap();
-    // Convert 0-100 range to 0.0-1.0
+async fn set_volume(state: tauri::State<'_, AppState>, volume: f32) -> Result<(), String> {
+    let sink = state
+        .sink
+        .lock()
+        .map_err(|_| "Failed to acquire sink lock".to_string())?;
+
+    // Convert 0-100 range to 0.0-1.0 with quadratic curve for more natural volume control
     sink.set_volume((volume / 100.0).powf(2.0));
+
+    Ok(())
 }
