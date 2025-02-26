@@ -191,23 +191,12 @@ async fn seek_position(
         .lock()
         .map_err(|_| "Failed to acquire sink lock".to_string())?;
 
-    let was_paused = sink.is_paused();
-
-    // Temporarily unpause to perform seek
-    if was_paused {
-        sink.play();
-    }
-
+    // Instead of unpausing temporarily, we'll create a silent seek operation
     let seek_duration = std::time::Duration::from_secs_f32(position);
 
-    // Perform the seek operation
+    // Perform the seek operation without unpausing
     match sink.try_seek(seek_duration) {
         Ok(_) => {
-            // If seek was successful
-            if was_paused {
-                sink.pause();
-            }
-
             // Drop the mutex lock before the delay
             drop(sink);
 
