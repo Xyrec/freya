@@ -24,6 +24,7 @@ tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 rodio = { version = "0.20.1", default-features = false, features = ["symphonia-all"] }
 symphonia = "0.5.4"
+lofty = "0.22.2"
 
 [features]
 symphonia-aac = ["symphonia/aac"]
