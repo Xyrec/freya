@@ -15,6 +15,7 @@ export function PlayerControls() {
   const [duration, setDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Format time as mm:ss
   const formatTime = (seconds: number) => {
@@ -23,7 +24,28 @@ export function PlayerControls() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Get initial playback state from backend
   useEffect(() => {
+    const initializePlaybackState = async () => {
+      try {
+        const state = await invoke<{ is_playing: boolean; is_empty: boolean }>(
+          "get_playback_state"
+        );
+        setIsPlaying(state.is_playing);
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Failed to get playback state:", error);
+        setIsInitialized(true);
+      }
+    };
+
+    initializePlaybackState();
+  }, []);
+
+  useEffect(() => {
+    // Only set up listeners once we have the initial state
+    if (!isInitialized) return;
+
     // Listen for progress updates from Rust
     const unlistenProgress = listen<{
       current_position: number;
@@ -34,6 +56,9 @@ export function PlayerControls() {
         setCurrentPosition(event.payload.current_position);
       }
       setDuration(event.payload.duration);
+
+      // If we're receiving progress updates, playback must be active
+      setIsPlaying(true);
     });
 
     // Listen for position_changed events (after seeking)
@@ -60,7 +85,7 @@ export function PlayerControls() {
       unlistenPositionChanged.then((unlisten) => unlisten());
       unlistenDone.then((unlisten) => unlisten());
     };
-  }, [isDragging]);
+  }, [isDragging, isInitialized]);
 
   // Toggle play/pause
   const togglePlayback = async () => {

@@ -17,6 +17,12 @@ struct ProgressData {
     duration: f32,
 }
 
+#[derive(serde::Serialize)]
+struct PlaybackState {
+    is_playing: bool,
+    is_empty: bool,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -36,10 +42,30 @@ pub fn run() {
             play_sound,
             pause_sound,
             set_volume,
-            seek_position
+            seek_position,
+            get_playback_state
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+async fn get_playback_state(state: tauri::State<'_, AppState>) -> Result<PlaybackState, String> {
+    let sink = state
+        .sink
+        .lock()
+        .map_err(|_| "Failed to acquire sink lock".to_string())?;
+
+    let is_empty = sink.empty();
+    let is_paused = state.is_paused.load(Ordering::SeqCst);
+
+    // We consider playback active if sink is not empty and not paused
+    let is_playing = !is_empty && !is_paused;
+
+    Ok(PlaybackState {
+        is_playing,
+        is_empty,
+    })
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
