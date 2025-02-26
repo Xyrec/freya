@@ -9,13 +9,13 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 
 export function PlayerControls() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(70);
-  const [currentPosition, setCurrentPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [sliderPosition, setSliderPosition] = useState(0);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [volume, setVolume] = useState<number>(70);
+  const [currentPosition, setCurrentPosition] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [sliderPosition, setSliderPosition] = useState<number>(0);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   // Format time as mm:ss
   const formatTime = (seconds: number) => {
