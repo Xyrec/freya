@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter};
 struct AppState {
     sink: Arc<Mutex<Sink>>,
     is_paused: Arc<AtomicBool>,
+    is_seeking: Arc<AtomicBool>, // New flag to track seeking state
 }
 
 #[derive(serde::Serialize, Clone)]
@@ -22,6 +23,7 @@ pub fn run() {
     let app_state = AppState {
         sink: Arc::new(Mutex::new(sink)),
         is_paused: Arc::new(AtomicBool::new(false)),
+        is_seeking: Arc::new(AtomicBool::new(false)), // Initialize seeking flag
     };
 
     tauri::Builder::default()
@@ -47,7 +49,7 @@ async fn play_sound(app: AppHandle, state: tauri::State<'_, AppState>) -> Result
         state.is_paused.store(false, Ordering::SeqCst);
         Ok(())
     } else if sink.empty() {
-        let file = File::open("../static/example.flac").unwrap();
+        let file = File::open("../music/example.flac").unwrap();
         let source = Decoder::new(file).unwrap();
         let duration = source.total_duration().unwrap_or_default();
         sink.append(source);
@@ -59,6 +61,7 @@ async fn play_sound(app: AppHandle, state: tauri::State<'_, AppState>) -> Result
 
         let arc_sink = Arc::clone(&state.sink);
         let arc_paused = Arc::clone(&state.is_paused);
+        let arc_seeking = Arc::clone(&state.is_seeking); // Add seeking flag
         let app_clone = app.clone();
 
         std::thread::spawn(move || {
@@ -66,7 +69,8 @@ async fn play_sound(app: AppHandle, state: tauri::State<'_, AppState>) -> Result
             std::thread::sleep(std::time::Duration::from_millis(50));
 
             while !arc_sink.lock().unwrap().empty() {
-                if !arc_paused.load(Ordering::SeqCst) {
+                // Only send progress updates if not seeking
+                if !arc_paused.load(Ordering::SeqCst) && !arc_seeking.load(Ordering::SeqCst) {
                     let sink = arc_sink.lock().unwrap();
                     let position = sink.get_pos();
                     // Ensure position never exceeds duration
@@ -114,7 +118,14 @@ async fn pause_sound(state: tauri::State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn seek_position(state: tauri::State<AppState>, position: f32) {
+async fn seek_position(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    position: f32,
+) -> Result<(), String> {
+    // Set seeking flag before seeking
+    state.is_seeking.store(true, Ordering::SeqCst);
+
     let sink = state.sink.lock().unwrap();
     let was_paused = sink.is_paused();
 
@@ -123,11 +134,48 @@ fn seek_position(state: tauri::State<AppState>, position: f32) {
         sink.play();
     }
 
+    // Small delay to ensure the seek completes
+    let duration = std::time::Duration::from_secs_f32(position);
+
     // Perform the seek operation
-    if let Ok(_) = sink.try_seek(std::time::Duration::from_secs_f32(position)) {
-        // If seek was successful and sink was paused, restore pause state
-        if was_paused {
-            sink.pause();
+    match sink.try_seek(duration) {
+        Ok(_) => {
+            // If seek was successful
+            if was_paused {
+                sink.pause();
+            }
+
+            // Drop the mutex lock before the delay
+            drop(sink);
+
+            // Small delay to ensure the backend has updated its position
+            std::thread::sleep(std::time::Duration::from_millis(50));
+
+            // Send immediate position update to frontend
+            let actual_sink = state.sink.lock().unwrap();
+            let new_position = actual_sink.get_pos().as_secs_f32();
+
+            // Calculate duration if needed
+            let duration_secs = 0.0; // This should be replaced with actual duration logic
+
+            // Emit position_changed event with accurate position
+            app.emit(
+                "position_changed",
+                ProgressData {
+                    current_position: new_position,
+                    duration: duration_secs,
+                },
+            )
+            .unwrap();
+
+            // Clear seeking flag after position update is sent
+            state.is_seeking.store(false, Ordering::SeqCst);
+            Ok(())
+        }
+        Err(e) => {
+            // Clear seeking flag on error
+            state.is_seeking.store(false, Ordering::SeqCst);
+            Err(format!("Seek error: {:?}", e))
         }
     }
 }
