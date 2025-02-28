@@ -8,6 +8,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 
+interface CurrentTrack {
+  id: number;
+  title: string;
+  artist: string;
+  album: string;
+}
+
 export function PlayerControls() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(70);
@@ -16,6 +23,12 @@ export function PlayerControls() {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [sliderPosition, setSliderPosition] = useState<number>(0);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [currentTrack, setCurrentTrack] = useState<CurrentTrack>({
+    id: 4, // Default track ID (matches the hardcoded "current" track in our playlist)
+    title: "Come Alive",
+    artist: "Netsky",
+    album: "Example Album",
+  });
 
   // Format time as mm:ss
   const formatTime = (seconds: number) => {
@@ -40,6 +53,15 @@ export function PlayerControls() {
     };
 
     initializePlaybackState();
+
+    // Listen for track change events
+    const unlistenTrackChange = listen<CurrentTrack>("track_changed", (event) => {
+      setCurrentTrack(event.payload);
+    });
+
+    return () => {
+      unlistenTrackChange.then(unlisten => unlisten());
+    };
   }, []);
 
   useEffect(() => {
@@ -145,7 +167,7 @@ export function PlayerControls() {
       <div className="flex items-center gap-4">
         <Image
           src="album-art.jpg"
-          alt="Album art"
+          alt={`Album art for ${currentTrack.album}`}
           className="aspect-square w-24 rounded-md"
           width={96}
           height={96}
@@ -154,8 +176,8 @@ export function PlayerControls() {
         <div className="flex-1">
           <div className="mb-2 flex items-center justify-between">
             <div>
-              <div className="font-medium leading-none">Come Alive</div>
-              <div className="text-sm text-muted-foreground">Netsky</div>
+              <div className="font-medium leading-none">{currentTrack.title}</div>
+              <div className="text-sm text-muted-foreground">{currentTrack.artist}</div>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground font-mono">
               <span>{formatTime(currentPosition)}</span>

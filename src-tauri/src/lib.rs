@@ -4,6 +4,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 
+// Include our playlist module
+mod playlist;
+use playlist::{get_playlist, get_track_album_art, play_track, scan_directory};
+
 struct AppState {
     sink: Arc<Mutex<Sink>>,
     is_paused: Arc<AtomicBool>,
@@ -43,7 +47,12 @@ pub fn run() {
             pause_sound,
             set_volume,
             seek_position,
-            get_playback_state
+            get_playback_state,
+            // Register our new playlist commands
+            get_playlist,
+            get_track_album_art,
+            play_track,
+            scan_directory
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
