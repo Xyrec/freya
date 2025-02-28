@@ -122,3 +122,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Add this to your globals.css file */
+:root {
+  --transition-duration: 0.3s;
+}
+body {
+  transition: background-color 0.15s ease;
+}
+
+* {
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    fill 0.15s ease, stroke 0.15s ease;
+}
