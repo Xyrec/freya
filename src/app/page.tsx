@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { info } from "@tauri-apps/plugin-log";
+import { invoke } from "@tauri-apps/api/core";
 import { PlayerControls } from "@/components/player-controls";
 import { PlaylistView } from "@/components/playlist-view";
 import { ThemeToggleButton } from "@/components/theme-provider";
@@ -15,7 +16,17 @@ export default function MusicPlayer() {
     (async () => {
       unlisten = await getCurrentWebview().onDragDropEvent((event: any) => {
         if (event.payload.type === "drop") {
-          info(`User dropped: ${JSON.stringify(event.payload.paths)}`);
+          const paths = event.payload.paths;
+          info(`User dropped: ${JSON.stringify(paths)}`);
+
+          // Add the files to the playlist
+          invoke("add_files", { paths })
+            .then((newTracks) => {
+              info(`Added ${(newTracks as any[]).length} tracks to playlist`);
+            })
+            .catch((error) => {
+              info(`Error adding files: ${error}`);
+            });
         }
       });
     })();

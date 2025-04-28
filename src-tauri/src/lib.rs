@@ -6,7 +6,9 @@ use tauri::{AppHandle, Emitter};
 
 // Include our playlist module
 mod playlist;
-use playlist::{get_playlist, get_track_album_art, play_track, scan_directory};
+use playlist::{
+    add_files, get_playlist, get_track_album_art, play_track, scan_directory, PlaylistState,
+};
 
 struct AppState {
     sink: Arc<Mutex<Sink>>,
@@ -41,6 +43,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
         .manage(app_state)
+        .manage(PlaylistState::new())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             play_sound,
@@ -48,7 +51,7 @@ pub fn run() {
             set_volume,
             seek_position,
             get_playback_state,
-            // Register our new playlist commands
+            add_files,
             get_playlist,
             get_track_album_art,
             play_track,
