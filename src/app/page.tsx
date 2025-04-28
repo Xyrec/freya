@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { info } from "@tauri-apps/plugin-log";
 import { PlayerControls } from "@/components/player-controls";
 import { PlaylistView } from "@/components/playlist-view";
 import { ThemeToggleButton } from "@/components/theme-provider";
@@ -7,6 +10,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function MusicPlayer() {
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    (async () => {
+      unlisten = await getCurrentWebview().onDragDropEvent((event: any) => {
+        if (event.payload.type === "drop") {
+          info(`User dropped: ${JSON.stringify(event.payload.paths)}`);
+        }
+      });
+    })();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <Tabs
